@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Price Per Unit Calculator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>Price Per Unit</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=DM+Mono:wght@300;400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -11,592 +11,648 @@
   --bg:#0d0f14;--surface:#13161e;--border:#1f2330;
   --accent:#e8ff47;--accent-dim:rgba(232,255,71,0.12);--accent-glow:rgba(232,255,71,0.25);
   --text:#f0f2f7;--muted:#5a6075;--input-bg:#0a0c12;
-  --sidebar-w:260px;
+  --sidebar-w:270px;
+  --sat:env(safe-area-inset-top,0px);
+  --sab:env(safe-area-inset-bottom,0px);
+  --sal:env(safe-area-inset-left,0px);
 }
-html,body{height:100%;overflow:hidden}
-body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);display:flex;min-height:100vh;}
 
-body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(232,255,71,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(232,255,71,0.03) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0}
-body::after{content:'';position:fixed;top:-120px;right:-120px;width:380px;height:380px;background:radial-gradient(circle,rgba(232,255,71,0.08) 0%,transparent 70%);pointer-events:none;z-index:0}
-.blob-bottom{position:fixed;bottom:-100px;left:-80px;width:300px;height:300px;background:radial-gradient(circle,rgba(100,120,255,0.07) 0%,transparent 70%);pointer-events:none;z-index:0}
+html{height:100%}
+body{
+  background:var(--bg);
+  font-family:'Inter',sans-serif;
+  color:var(--text);
+  min-height:100vh;
+  min-height:100dvh;
+  overflow-x:hidden;
+  overflow-y:auto;
+  -webkit-text-size-adjust:100%;
+}
 
-/* ── SIDEBAR ── */
+/* Grid bg */
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(232,255,71,0.03)1px,transparent 1px),linear-gradient(90deg,rgba(232,255,71,0.03)1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0}
+body::after{content:'';position:fixed;top:-120px;right:-120px;width:380px;height:380px;background:radial-gradient(circle,rgba(232,255,71,0.07)0%,transparent 70%);pointer-events:none;z-index:0}
+.blob-bottom{position:fixed;bottom:-100px;left:-80px;width:280px;height:280px;background:radial-gradient(circle,rgba(100,120,255,0.06)0%,transparent 70%);pointer-events:none;z-index:0}
+
+/* ═══════════════ SIDEBAR ═══════════════ */
 .sidebar{
-  position:fixed;top:0;left:0;height:100vh;
+  position:fixed;top:0;left:0;
+  height:100%;height:100dvh;
   width:var(--sidebar-w);
   background:#0f1119;
   border-right:1px solid var(--border);
   display:flex;flex-direction:column;
-  z-index:200;
-  transform:translateX(calc(-1 * var(--sidebar-w)));
-  transition:transform 0.32s cubic-bezier(0.22,1,0.36,1);
-  box-shadow:4px 0 40px rgba(0,0,0,0.5);
+  z-index:500;
+  transform:translateX(calc(-1*var(--sidebar-w)));
+  transition:transform 0.3s cubic-bezier(0.22,1,0.36,1);
+  box-shadow:6px 0 48px rgba(0,0,0,0.7);
+  /* safe areas */
+  padding-top:var(--sat);
+  padding-bottom:var(--sab);
+  padding-left:var(--sal);
 }
 .sidebar.open{transform:translateX(0)}
 
-.sidebar-header{padding:24px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
-.sidebar-title{font-family:'DM Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.12em;color:var(--muted);font-weight:700;}
-.sidebar-close{background:none;border:none;cursor:pointer;padding:4px;display:flex;align-items:center;justify-content:center;color:var(--muted);border-radius:6px;transition:color 0.15s,background 0.15s;}
-.sidebar-close:hover{color:var(--text);background:rgba(255,255,255,0.06);}
-.sidebar-close svg{width:16px;height:16px;}
+.sidebar-head{
+  padding:18px 18px 14px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;background:#0f1119;z-index:2;flex-shrink:0;
+}
+.sidebar-title{font-family:'DM Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.12em;color:var(--muted);font-weight:700}
+.sidebar-x{
+  background:none;border:none;cursor:pointer;
+  width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+  color:var(--muted);border-radius:8px;
+  transition:color 0.15s,background 0.15s;
+  -webkit-tap-highlight-color:transparent;
+}
+.sidebar-x:active{color:var(--text);background:rgba(255,255,255,0.07)}
+.sidebar-x svg{width:17px;height:17px}
 
-.sidebar-section{padding:10px 0;}
-.sidebar-label{padding:6px 20px;font-family:'DM Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.12em;color:#3a3f52;}
+.sidebar-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;}
 
-.sidebar-item{padding:11px 20px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:background 0.15s;gap:12px;}
-.sidebar-item:hover{background:rgba(255,255,255,0.03);}
-.sidebar-item-left{display:flex;flex-direction:column;gap:3px;}
-.sidebar-item-label{font-size:13px;color:var(--text);font-weight:500;}
-.sidebar-item-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);}
+.sb-section{padding:8px 0}
+.sb-section-lbl{padding:8px 18px 4px;font-family:'DM Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:0.12em;color:#383c50}
+.sb-row{
+  padding:13px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  cursor:pointer;transition:background 0.15s;min-height:54px;
+  -webkit-tap-highlight-color:transparent;
+}
+.sb-row:active{background:rgba(255,255,255,0.05)}
+.sb-row-left{display:flex;flex-direction:column;gap:3px}
+.sb-row-lbl{font-size:14px;color:var(--text);font-weight:500}
+.sb-row-sub{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)}
 
-/* Compare item special style */
-.sidebar-item.compare-item .sidebar-item-label{color:var(--accent);}
-.sidebar-item.compare-item:hover{background:var(--accent-dim);}
-.compare-icon{width:30px;height:30px;background:var(--accent-dim);border:1px solid rgba(232,255,71,0.25);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.compare-icon svg{width:14px;height:14px;stroke:var(--accent);}
+/* Compare row */
+.sb-row.compare .sb-row-lbl{color:var(--accent)}
+.sb-row.compare:active{background:var(--accent-dim)}
+.sb-ico{width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sb-ico.c{background:var(--accent-dim);border:1px solid rgba(232,255,71,0.25)}
+.sb-ico.c svg{stroke:var(--accent)}
+.sb-ico.x{background:rgba(255,107,107,0.08);border:1px solid rgba(255,107,107,0.2)}
+.sb-ico.x svg{stroke:#ff6b6b}
+.sb-ico svg{width:15px;height:15px}
 
-/* Exit compare special */
-.sidebar-item.exit-compare-item .sidebar-item-label{color:#ff6b6b;}
-.sidebar-item.exit-compare-item:hover{background:rgba(255,107,107,0.06);}
-.exit-icon{width:30px;height:30px;background:rgba(255,107,107,0.08);border:1px solid rgba(255,107,107,0.2);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.exit-icon svg{width:14px;height:14px;stroke:#ff6b6b;}
+/* Exit compare */
+.sb-row.exit-cmp .sb-row-lbl{color:#ff6b6b}
+.sb-row.exit-cmp:active{background:rgba(255,107,107,0.06)}
 
-.toggle{width:36px;height:20px;background:#2a2d3a;border-radius:999px;position:relative;cursor:pointer;flex-shrink:0;transition:background 0.25s cubic-bezier(0.22,1,0.36,1)}
+/* Toggle */
+.toggle{width:40px;height:22px;background:#252837;border-radius:999px;position:relative;flex-shrink:0;-webkit-tap-highlight-color:transparent;transition:background 0.25s}
 .toggle.on{background:var(--accent)}
-.toggle::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;background:#fff;border-radius:50%;transition:transform 0.25s cubic-bezier(0.34,1.56,0.64,1)}
-.toggle.on::after{transform:translateX(16px)}
+.toggle::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;background:#fff;border-radius:50%;transition:transform 0.25s cubic-bezier(0.34,1.56,0.64,1)}
+.toggle.on::after{transform:translateX(18px)}
 
-.sidebar-divider{height:1px;background:var(--border);margin:4px 20px;}
+.sb-divider{height:1px;background:var(--border);margin:3px 18px}
 
-.hst-edit-row{padding:10px 20px 14px;display:flex;align-items:center;gap:10px;}
-.hst-edit-label{font-size:13px;color:var(--text);font-weight:500;flex:1;}
-.hst-input-wrap{display:flex;align-items:center;gap:4px;background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:4px 10px;transition:border-color 0.2s}
-.hst-input-wrap:focus-within{border-color:rgba(232,255,71,0.4)}
-.hst-input{background:none;border:none;outline:none;color:var(--accent);font-family:'DM Mono',monospace;font-size:14px;font-weight:500;width:40px;text-align:right}
-.hst-input::-webkit-outer-spin-button,.hst-input::-webkit-inner-spin-button{-webkit-appearance:none}
-.hst-input[type=number]{-moz-appearance:textfield}
+/* HST rate row */
+.sb-hst-row{padding:10px 18px 14px;display:flex;align-items:center;gap:10px}
+.sb-hst-lbl{font-size:14px;color:var(--text);font-weight:500;flex:1}
+.hst-wrap{display:flex;align-items:center;gap:4px;background:var(--input-bg);border:1px solid var(--border);border-radius:8px;padding:5px 10px;transition:border-color 0.2s}
+.hst-wrap:focus-within{border-color:rgba(232,255,71,0.4)}
+.hst-in{background:none;border:none;outline:none;color:var(--accent);font-family:'DM Mono',monospace;font-size:14px;font-weight:500;width:44px;text-align:right}
+.hst-in::-webkit-outer-spin-button,.hst-in::-webkit-inner-spin-button{-webkit-appearance:none}
+.hst-in[type=number]{-moz-appearance:textfield}
 .hst-pct{font-family:'DM Mono',monospace;font-size:14px;color:var(--muted)}
 
-.sidebar-danger{padding:11px 20px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:background 0.15s;gap:12px;margin-top:auto;border-top:1px solid var(--border);}
-.sidebar-danger:hover{background:rgba(255,107,107,0.06);}
-.sidebar-danger-label{font-size:13px;color:#ff6b6b;font-weight:500;}
+/* Clear row (pinned bottom) */
+.sb-clear{
+  padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  cursor:pointer;border-top:1px solid var(--border);flex-shrink:0;
+  transition:background 0.15s;min-height:56px;
+  -webkit-tap-highlight-color:transparent;margin-top:auto;
+}
+.sb-clear:active{background:rgba(255,107,107,0.06)}
+.sb-clear-lbl{font-size:14px;color:#ff6b6b;font-weight:500}
+.sb-clear-sub{font-family:'DM Mono',monospace;font-size:10px;color:#5a3a3a}
 
-/* Sidebar overlay */
-.sidebar-overlay{position:fixed;inset:0;z-index:190;background:rgba(0,0,0,0.45);opacity:0;pointer-events:none;transition:opacity 0.3s;}
-.sidebar-overlay.active{opacity:1;pointer-events:all;}
+/* Overlay */
+.overlay{position:fixed;inset:0;z-index:490;background:rgba(0,0,0,0.55);opacity:0;pointer-events:none;transition:opacity 0.3s;-webkit-tap-highlight-color:transparent}
+.overlay.on{opacity:1;pointer-events:all}
 
-/* ── MAIN CONTENT ── */
+/* ═══════════════ HAMBURGER ═══════════════ */
+.ham{
+  position:fixed;
+  top:calc(14px + var(--sat));
+  left:calc(14px + var(--sal));
+  width:42px;height:42px;
+  background:rgba(13,15,20,0.88);
+  border:1px solid var(--border);
+  border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;z-index:400;
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  transition:border-color 0.2s,background 0.2s;
+  -webkit-tap-highlight-color:transparent;
+}
+.ham:active{background:rgba(255,255,255,0.08);border-color:rgba(232,255,71,0.3)}
+.ham svg{width:18px;height:18px;stroke:var(--muted);transition:stroke 0.2s}
+.ham:active svg{stroke:var(--accent)}
+
+/* ═══════════════ MAIN AREA ═══════════════ */
 .main{
   position:relative;z-index:1;
-  flex:1;
-  display:flex;align-items:center;justify-content:center;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
   min-height:100vh;
-  transition:padding-left 0.32s cubic-bezier(0.22,1,0.36,1);
-  padding:24px;
+  min-height:100dvh;
+  /* top pad accounts for hamburger; bottom for safe area */
+  padding:calc(72px + var(--sat)) 16px calc(32px + var(--sab));
 }
 
-/* ── HAMBURGER ── */
-.menu-btn{
-  position:fixed;top:20px;left:20px;
-  background:rgba(255,255,255,0.05);
-  border:1px solid var(--border);
-  border-radius:10px;width:38px;height:38px;
-  display:flex;align-items:center;justify-content:center;
-  cursor:pointer;z-index:150;
-  transition:background 0.2s,border-color 0.2s;
-}
-.menu-btn:hover{background:rgba(255,255,255,0.09);border-color:rgba(232,255,71,0.25)}
-.menu-btn svg{width:18px;height:18px;stroke:var(--muted);transition:stroke 0.2s}
-.menu-btn:hover svg{stroke:var(--accent)}
-
-/* ── SINGLE CARD ── */
+/* ═══════════════ SINGLE CARD ═══════════════ */
 .card{
-  background:var(--surface);border:1px solid var(--border);border-radius:20px;
-  padding:48px 44px;width:420px;
-  box-shadow:0 0 0 1px rgba(255,255,255,0.03) inset,0 32px 80px rgba(0,0,0,0.6);
-  animation:slideUp 0.6s cubic-bezier(0.22,1,0.36,1) both;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:36px 28px;
+  width:100%;max-width:420px;
+  box-shadow:0 0 0 1px rgba(255,255,255,0.03)inset,0 28px 72px rgba(0,0,0,0.6);
+  animation:slideUp 0.5s cubic-bezier(0.22,1,0.36,1) both;
 }
-@keyframes slideUp{from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
 
-h1{font-family:'Playfair Display',serif;font-size:30px;font-weight:800;line-height:1.15;color:var(--text);letter-spacing:-0.01em;margin-bottom:32px}
+h1{font-family:'Playfair Display',serif;font-size:30px;font-weight:800;line-height:1.15;color:var(--text);letter-spacing:-0.01em;margin-bottom:28px}
 h1 span{color:var(--accent)}
 
-.inputs{display:flex;flex-direction:column;gap:16px;margin-bottom:24px}
-.field{background:var(--input-bg);border:1px solid var(--border);border-radius:14px;padding:18px 20px;display:flex;align-items:center;gap:16px;transition:border-color 0.2s,box-shadow 0.2s}
+/* ── FIELDS ── */
+.inputs{display:flex;flex-direction:column;gap:14px;margin-bottom:20px}
+.field{
+  background:var(--input-bg);border:1px solid var(--border);border-radius:14px;
+  padding:16px 18px;display:flex;align-items:center;gap:14px;
+  transition:border-color 0.2s,box-shadow 0.2s;
+}
 .field:focus-within{border-color:rgba(232,255,71,0.4);box-shadow:0 0 0 3px var(--accent-glow)}
-.field-body{flex:1;display:flex;flex-direction:column;gap:3px}
-.field-label{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;font-weight:700}
-.field-input{background:none;border:none;outline:none;color:var(--text);font-family:'Inter',sans-serif;font-size:18px;font-weight:600;width:100%}
-.field-input::placeholder{color:#2e3345;font-weight:400}
-.field-input::-webkit-outer-spin-button,.field-input::-webkit-inner-spin-button{-webkit-appearance:none}
-.field-input[type=number]{-moz-appearance:textfield}
+.field-body{flex:1;display:flex;flex-direction:column;gap:4px;min-width:0}
+.field-lbl{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;font-weight:700}
+.field-in{
+  background:none;border:none;outline:none;
+  color:var(--text);font-family:'Inter',sans-serif;
+  font-size:20px;font-weight:600;width:100%;
+  -webkit-appearance:none;
+}
+.field-in::placeholder{color:#252837;font-weight:400}
+.field-in::-webkit-outer-spin-button,.field-in::-webkit-inner-spin-button{-webkit-appearance:none}
+.field-in[type=number]{-moz-appearance:textfield}
 
 .price-row{display:flex;align-items:center;gap:8px}
-.price-row .field-input{flex:1}
+.price-row .field-in{flex:1;min-width:0}
 
 .hst-btn{
   display:none;
-  background:var(--accent-dim);
-  border:1px solid rgba(232,255,71,0.3);
-  border-radius:8px;
-  color:var(--accent);
-  font-family:'DM Mono',monospace;
-  font-size:12px;
-  font-weight:500;
-  padding:6px 10px;
-  cursor:pointer;
-  white-space:nowrap;
-  transition:all 0.2s cubic-bezier(0.22,1,0.36,1);
-  flex-shrink:0;
-  letter-spacing:0.04em;
+  background:var(--accent-dim);border:1px solid rgba(232,255,71,0.3);border-radius:8px;
+  color:var(--accent);font-family:'DM Mono',monospace;font-size:12px;font-weight:600;
+  padding:7px 11px;cursor:pointer;white-space:nowrap;flex-shrink:0;
+  min-height:38px;min-width:38px;
+  transition:background 0.2s;
+  -webkit-tap-highlight-color:transparent;
 }
-.hst-btn:hover{background:rgba(232,255,71,0.22);border-color:rgba(232,255,71,0.5);transform:scale(1.04)}
-.hst-btn:active{transform:scale(0.97)}
-.hst-btn.visible{display:block;animation:fadeInBtn 0.25s cubic-bezier(0.22,1,0.36,1)}
-@keyframes fadeInBtn{from{opacity:0;transform:scale(0.85)}to{opacity:1;transform:scale(1)}}
+.hst-btn:active{background:rgba(232,255,71,0.22)}
+.hst-btn.on{display:block;animation:fadeBtn 0.2s ease}
+@keyframes fadeBtn{from{opacity:0;transform:scale(0.85)}to{opacity:1;transform:scale(1)}}
 
-.result-box{background:var(--input-bg);border:1px solid var(--border);border-radius:14px;padding:22px;min-height:86px;display:flex;flex-direction:column;justify-content:center;position:relative;overflow:hidden;transition:border-color 0.3s,box-shadow 0.3s}
-.result-box.has-result{border-color:rgba(232,255,71,0.3);box-shadow:0 0 24px rgba(232,255,71,0.06)}
+/* ── RESULT BOX ── */
+.result-box{
+  background:var(--input-bg);border:1px solid var(--border);border-radius:14px;
+  padding:20px;min-height:82px;
+  display:flex;flex-direction:column;justify-content:center;
+  position:relative;overflow:hidden;transition:border-color 0.3s,box-shadow 0.3s;
+}
+.result-box.lit{border-color:rgba(232,255,71,0.3);box-shadow:0 0 24px rgba(232,255,71,0.06)}
 .result-box::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:0;transition:opacity 0.4s}
-.result-box.has-result::after{opacity:1}
-.result-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;font-weight:700}
-.result-value{font-family:'Inter',sans-serif;font-size:34px;font-weight:600;letter-spacing:-0.02em;color:var(--muted);transition:color 0.3s}
-.result-value.active{color:var(--accent);animation:popIn 0.4s cubic-bezier(0.34,1.56,0.64,1)}
+.result-box.lit::after{opacity:1}
+.result-lbl{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:5px;font-weight:700}
+.result-val{font-family:'Inter',sans-serif;font-size:32px;font-weight:600;letter-spacing:-0.02em;color:var(--muted);transition:color 0.3s}
+.result-val.pop{color:var(--accent);animation:popIn 0.4s cubic-bezier(0.34,1.56,0.64,1)}
 @keyframes popIn{from{transform:scale(0.85);opacity:0}to{transform:scale(1);opacity:1}}
 
-.hst-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(8px);background:rgba(232,255,71,0.12);border:1px solid rgba(232,255,71,0.25);border-radius:8px;padding:6px 14px;font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);white-space:nowrap;opacity:0;transition:opacity 0.2s,transform 0.2s cubic-bezier(0.22,1,0.36,1);pointer-events:none;z-index:999}
-.hst-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-
-/* ── COMPARE MODE ── */
-.compare-wrapper{
+/* ═══════════════ COMPARE MODE ═══════════════ */
+/* Default: stacked (mobile-first) */
+.cmp-wrap{
   display:none;
-  flex-direction:row;
-  gap:20px;
-  align-items:flex-start;
+  flex-direction:column;
+  gap:0;
+  width:100%;max-width:480px;
   animation:slideUp 0.5s cubic-bezier(0.22,1,0.36,1) both;
 }
-.compare-wrapper.active{display:flex;}
+.cmp-wrap.on{display:flex}
 
-.compare-card{
+/* VS row (mobile) */
+.vs-row{
+  display:flex;align-items:center;gap:12px;padding:4px 0;
+}
+.vs-line{flex:1;height:1px;background:var(--border)}
+.vs-lbl{font-family:'Playfair Display',serif;font-size:16px;font-weight:800;color:#252837;letter-spacing:0.08em;flex-shrink:0}
+
+/* Compare cards */
+.cmp-card{
   background:var(--surface);border:1px solid var(--border);border-radius:20px;
-  padding:36px 32px;width:340px;
-  box-shadow:0 0 0 1px rgba(255,255,255,0.03) inset,0 24px 60px rgba(0,0,0,0.5);
-  flex-shrink:0;
+  padding:28px 24px;
+  box-shadow:0 0 0 1px rgba(255,255,255,0.03)inset,0 20px 52px rgba(0,0,0,0.5);
 }
-.compare-card h2{
-  font-family:'Playfair Display',serif;font-size:20px;font-weight:800;margin-bottom:24px;
-  color:var(--muted);letter-spacing:-0.01em;
+.cmp-card h2{
+  font-family:'Playfair Display',serif;font-size:20px;font-weight:800;
+  margin-bottom:20px;color:var(--muted);letter-spacing:-0.01em;
 }
-.compare-card h2 span{color:var(--accent);}
-.compare-card.winner h2{color:var(--text);}
-.compare-card.winner{border-color:rgba(232,255,71,0.3);box-shadow:0 0 0 1px rgba(255,255,255,0.03) inset, 0 0 32px rgba(232,255,71,0.06), 0 24px 60px rgba(0,0,0,0.5);}
+.cmp-card h2 span{color:var(--accent)}
+.cmp-card.winner h2{color:var(--text)}
+.cmp-card.winner{border-color:rgba(232,255,71,0.3);box-shadow:0 0 0 1px rgba(255,255,255,0.03)inset,0 0 28px rgba(232,255,71,0.07),0 20px 52px rgba(0,0,0,0.5)}
 
-/* VS divider */
-.vs-divider{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  padding-top:48px;
-  gap:8px;flex-shrink:0;
-  align-self:stretch;
+/* Verdict banner */
+.verdict{
+  margin-top:14px;padding:13px 15px;border-radius:12px;
+  background:var(--accent-dim);border:1px solid rgba(232,255,71,0.2);
+  font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);
+  letter-spacing:0.05em;text-transform:uppercase;display:none;line-height:1.5;
 }
-.vs-label{
-  font-family:'Playfair Display',serif;font-size:22px;font-weight:800;
-  color:#2a2d3a;letter-spacing:0.05em;
-}
-.vs-line{width:1px;background:var(--border);flex:1;max-height:120px;}
+.verdict.on{display:block;animation:popIn 0.4s cubic-bezier(0.34,1.56,0.64,1)}
+.verdict.tie{background:rgba(100,120,255,0.1);border-color:rgba(100,120,255,0.25);color:#8899ff}
 
-.compare-verdict{
-  margin-top:20px;
-  padding:14px 16px;
-  border-radius:12px;
-  background:var(--accent-dim);
-  border:1px solid rgba(232,255,71,0.2);
-  font-family:'DM Mono',monospace;
-  font-size:11px;color:var(--accent);
-  letter-spacing:0.06em;
-  text-transform:uppercase;
-  display:none;
-}
-.compare-verdict.show{display:block;animation:popIn 0.4s cubic-bezier(0.34,1.56,0.64,1)}
-.compare-verdict.tie{background:rgba(100,120,255,0.1);border-color:rgba(100,120,255,0.25);color:#8899ff;}
+/* ── Desktop: side by side ── */
+@media(min-width:700px){
+  .cmp-wrap{
+    flex-direction:row;
+    align-items:stretch;
+    max-width:820px;
+    gap:0;
+  }
+  /* hide mobile VS row */
+  .vs-row{display:none}
+  /* show vertical VS column */
+  .vs-col{
+    display:flex!important;flex-direction:column;align-items:center;
+    padding-top:52px;gap:8px;flex-shrink:0;width:44px;
+    align-self:stretch;
+  }
+  .vs-col-line{width:1px;background:var(--border);flex:1;max-height:100px}
+  .vs-col-lbl{font-family:'Playfair Display',serif;font-size:18px;font-weight:800;color:#252837;letter-spacing:0.05em}
 
-.compare-result-value{font-size:28px;}
+  .cmp-card{flex:1;min-width:0;padding:32px 28px;}
+  .cmp-card h2{font-size:22px}
+
+  /* Verdict below card2 on desktop */
+  .verdict{font-size:11px}
+}
+
+/* VS col hidden by default (mobile) */
+.vs-col{display:none}
+
+/* ── Toast ── */
+.toast{
+  position:fixed;
+  bottom:calc(22px + var(--sab));
+  left:50%;transform:translateX(-50%) translateY(8px);
+  background:rgba(232,255,71,0.12);border:1px solid rgba(232,255,71,0.25);
+  border-radius:8px;padding:8px 16px;
+  font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);
+  white-space:nowrap;opacity:0;
+  transition:opacity 0.2s,transform 0.2s cubic-bezier(0.22,1,0.36,1);
+  pointer-events:none;z-index:999;
+  max-width:calc(100vw - 32px);
+}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── Fine-tune for small phones ── */
+@media(max-width:400px){
+  .card,.cmp-card{padding:24px 18px;border-radius:18px}
+  h1{font-size:26px}
+  .field-in{font-size:18px}
+  .result-val{font-size:28px}
+}
 </style>
 </head>
 <body>
 <div class="blob-bottom"></div>
 
 <!-- Hamburger -->
-<button class="menu-btn" id="menuBtn" aria-label="Open menu" onclick="openSidebar()">
+<button class="ham" id="hamBtn" aria-label="Open settings" onclick="openSidebar()">
   <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <line x1="3" y1="7" x2="21" y2="7"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="17" x2="21" y2="17"/>
   </svg>
 </button>
 
-<!-- Sidebar overlay -->
-<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+<!-- Overlay -->
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
 
 <!-- Sidebar -->
 <div class="sidebar" id="sidebar">
-  <div class="sidebar-header">
+  <div class="sidebar-head">
     <span class="sidebar-title">Settings</span>
-    <button class="sidebar-close" onclick="closeSidebar()" aria-label="Close menu">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <button class="sidebar-x" onclick="closeSidebar()" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
       </svg>
     </button>
   </div>
 
-  <!-- Compare item (shown when NOT in compare mode) -->
-  <div class="sidebar-section" id="compareSection">
-    <div class="sidebar-item compare-item" onclick="enterCompare()">
-      <div class="sidebar-item-left">
-        <div class="sidebar-item-label">Compare</div>
-        <div class="sidebar-item-sub">Side-by-side product view</div>
+  <div class="sidebar-scroll">
+    <!-- Compare -->
+    <div id="cmpSection">
+      <div class="sb-row compare" onclick="enterCompare()">
+        <div class="sb-row-left">
+          <div class="sb-row-lbl">Compare</div>
+          <div class="sb-row-sub">Side-by-side product view</div>
+        </div>
+        <div class="sb-ico c">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/>
+          </svg>
+        </div>
       </div>
-      <div class="compare-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="3" width="7" height="18" rx="1"/><rect x="14" y="3" width="7" height="18" rx="1"/>
-        </svg>
-      </div>
+      <div class="sb-divider"></div>
     </div>
-    <div class="sidebar-divider"></div>
-  </div>
 
-  <!-- Exit compare (shown when IN compare mode) -->
-  <div class="sidebar-section" id="exitCompareSection" style="display:none;">
-    <div class="sidebar-item exit-compare-item" onclick="exitCompare()">
-      <div class="sidebar-item-left">
-        <div class="sidebar-item-label">Exit Compare mode</div>
-        <div class="sidebar-item-sub">Return to single calculator</div>
+    <!-- Exit Compare -->
+    <div id="exitCmpSection" style="display:none">
+      <div class="sb-row exit-cmp" onclick="exitCompare()">
+        <div class="sb-row-left">
+          <div class="sb-row-lbl">Exit Compare mode</div>
+          <div class="sb-row-sub">Return to single calculator</div>
+        </div>
+        <div class="sb-ico x">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </div>
       </div>
-      <div class="exit-icon">
-        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-        </svg>
-      </div>
+      <div class="sb-divider"></div>
     </div>
-    <div class="sidebar-divider"></div>
-  </div>
 
-  <!-- HST toggle -->
-  <div class="sidebar-section">
-    <div class="sidebar-label">Display</div>
-    <div class="sidebar-item" onclick="toggleHstBtn()">
-      <div class="sidebar-item-left">
-        <div class="sidebar-item-label">Show HST button</div>
-        <div class="sidebar-item-sub">Adds H button in price field</div>
+    <!-- HST -->
+    <div class="sb-section">
+      <div class="sb-section-lbl">Display</div>
+      <div class="sb-row" onclick="toggleHst()">
+        <div class="sb-row-left">
+          <div class="sb-row-lbl">Show HST button</div>
+          <div class="sb-row-sub">Adds H button in price field</div>
+        </div>
+        <div class="toggle" id="hstToggle"></div>
       </div>
-      <div class="toggle" id="hstToggle"></div>
-    </div>
-    <div class="sidebar-divider"></div>
-    <div class="hst-edit-row">
-      <div class="sidebar-item-label">HST rate</div>
-      <div class="hst-input-wrap">
-        <input class="hst-input" id="hstRate" type="number" min="0" max="100" step="0.1" value="13" oninput="onHstRateChange()"/>
-        <span class="hst-pct">%</span>
+      <div class="sb-divider"></div>
+      <div class="sb-hst-row">
+        <div class="sb-hst-lbl">HST rate</div>
+        <div class="hst-wrap">
+          <input class="hst-in" id="hstRate" type="number" inputmode="decimal" min="0" max="100" step="0.1" value="13"/>
+          <span class="hst-pct">%</span>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- Clear -->
-  <div class="sidebar-danger" onclick="clearAll(); closeSidebar();">
-    <div class="sidebar-item-left">
-      <div class="sidebar-danger-label">Clear all</div>
-      <div class="sidebar-item-sub" style="color:#5a3a3a;">Reset fields &amp; result</div>
+    <div style="flex:1"></div>
+
+    <!-- Clear -->
+    <div class="sb-clear" onclick="clearAll();closeSidebar()">
+      <div class="sb-row-left">
+        <div class="sb-clear-lbl">Clear all</div>
+        <div class="sb-clear-sub">Reset fields &amp; result</div>
+      </div>
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#ff6b6b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+      </svg>
     </div>
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ff6b6b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
   </div>
 </div>
 
-<!-- Main content -->
-<div class="main" id="mainContent">
+<!-- ═══ MAIN ═══ -->
+<div class="main">
 
-  <!-- Single mode -->
+  <!-- Single card -->
   <div class="card" id="singleCard">
     <h1>Price<br/><span>Per Unit</span></h1>
     <div class="inputs">
       <div class="field">
         <div class="field-body">
-          <span class="field-label">Quantity</span>
-          <input class="field-input" id="qty" type="number" min="0" placeholder="e.g. 12" oninput="autoCalc()"/>
+          <span class="field-lbl">Quantity</span>
+          <input class="field-in" id="qty" type="number" inputmode="decimal" min="0" placeholder="e.g. 12" oninput="autoCalc()"/>
         </div>
       </div>
       <div class="field">
         <div class="field-body">
-          <span class="field-label">Total Price</span>
+          <span class="field-lbl">Total Price</span>
           <div class="price-row">
-            <input class="field-input" id="price" type="number" min="0" step="0.01" placeholder="e.g. 49.99" oninput="autoCalc()"/>
-            <button class="hst-btn" id="hstBtn" onclick="applyHst('price','qty','resultVal','resultBox')">H</button>
+            <input class="field-in" id="price" type="number" inputmode="decimal" min="0" step="0.01" placeholder="e.g. 49.99" oninput="autoCalc()"/>
+            <button class="hst-btn" id="hstBtn0" onclick="doHst('price');autoCalc()">H</button>
           </div>
         </div>
       </div>
     </div>
-    <div class="result-box" id="resultBox">
-      <div class="result-label">Price Per Unit</div>
-      <div class="result-value" id="resultVal">—</div>
+    <div class="result-box" id="rBox0">
+      <div class="result-lbl">Price Per Unit</div>
+      <div class="result-val" id="rVal0">—</div>
     </div>
   </div>
 
-  <!-- Compare mode -->
-  <div class="compare-wrapper" id="compareWrapper">
+  <!-- Compare wrapper -->
+  <div class="cmp-wrap" id="cmpWrap">
 
     <!-- Product 1 -->
-    <div class="compare-card" id="card1">
+    <div class="cmp-card" id="card1">
       <h2>Product <span>1</span></h2>
       <div class="inputs">
         <div class="field">
           <div class="field-body">
-            <span class="field-label">Quantity</span>
-            <input class="field-input" id="qty1" type="number" min="0" placeholder="e.g. 12" oninput="autoCompare()"/>
+            <span class="field-lbl">Quantity</span>
+            <input class="field-in" id="qty1" type="number" inputmode="decimal" min="0" placeholder="e.g. 12" oninput="autoCompare()"/>
           </div>
         </div>
         <div class="field">
           <div class="field-body">
-            <span class="field-label">Total Price</span>
+            <span class="field-lbl">Total Price</span>
             <div class="price-row">
-              <input class="field-input" id="price1" type="number" min="0" step="0.01" placeholder="e.g. 49.99" oninput="autoCompare()"/>
-              <button class="hst-btn compare-hst" id="hstBtn1" onclick="applyHstCompare(1)">H</button>
+              <input class="field-in" id="price1" type="number" inputmode="decimal" min="0" step="0.01" placeholder="e.g. 49.99" oninput="autoCompare()"/>
+              <button class="hst-btn" id="hstBtn1" onclick="doHst('price1');autoCompare()">H</button>
             </div>
           </div>
         </div>
       </div>
-      <div class="result-box" id="resultBox1">
-        <div class="result-label">Price Per Unit</div>
-        <div class="result-value compare-result-value" id="resultVal1">—</div>
+      <div class="result-box" id="rBox1">
+        <div class="result-lbl">Price Per Unit</div>
+        <div class="result-val" id="rVal1">—</div>
       </div>
     </div>
 
-    <!-- VS -->
-    <div class="vs-divider">
+    <!-- VS — vertical (desktop), horizontal (mobile) -->
+    <div class="vs-col">
+      <div class="vs-col-line"></div>
+      <div class="vs-col-lbl">vs</div>
+      <div class="vs-col-line"></div>
+    </div>
+    <div class="vs-row">
       <div class="vs-line"></div>
-      <div class="vs-label">vs</div>
+      <div class="vs-lbl">vs</div>
       <div class="vs-line"></div>
     </div>
 
     <!-- Product 2 -->
-    <div class="compare-card" id="card2">
+    <div class="cmp-card" id="card2">
       <h2>Product <span>2</span></h2>
       <div class="inputs">
         <div class="field">
           <div class="field-body">
-            <span class="field-label">Quantity</span>
-            <input class="field-input" id="qty2" type="number" min="0" placeholder="e.g. 6" oninput="autoCompare()"/>
+            <span class="field-lbl">Quantity</span>
+            <input class="field-in" id="qty2" type="number" inputmode="decimal" min="0" placeholder="e.g. 6" oninput="autoCompare()"/>
           </div>
         </div>
         <div class="field">
           <div class="field-body">
-            <span class="field-label">Total Price</span>
+            <span class="field-lbl">Total Price</span>
             <div class="price-row">
-              <input class="field-input" id="price2" type="number" min="0" step="0.01" placeholder="e.g. 29.99" oninput="autoCompare()"/>
-              <button class="hst-btn compare-hst" id="hstBtn2" onclick="applyHstCompare(2)">H</button>
+              <input class="field-in" id="price2" type="number" inputmode="decimal" min="0" step="0.01" placeholder="e.g. 29.99" oninput="autoCompare()"/>
+              <button class="hst-btn" id="hstBtn2" onclick="doHst('price2');autoCompare()">H</button>
             </div>
           </div>
         </div>
       </div>
-      <div class="result-box" id="resultBox2">
-        <div class="result-label">Price Per Unit</div>
-        <div class="result-value compare-result-value" id="resultVal2">—</div>
+      <div class="result-box" id="rBox2">
+        <div class="result-lbl">Price Per Unit</div>
+        <div class="result-val" id="rVal2">—</div>
       </div>
-      <div class="compare-verdict" id="compareVerdict"></div>
+      <div class="verdict" id="verdict"></div>
     </div>
 
-  </div>
+  </div><!-- /cmpWrap -->
+</div><!-- /main -->
 
-</div>
-
-<div class="hst-toast" id="hstToast"></div>
+<div class="toast" id="toast"></div>
 
 <script>
-  let hstVisible = true;
-  let compareMode = false;
+/* ─── state ─── */
+let hstOn = true;
 
-  /* ── SIDEBAR ── */
-  function openSidebar(){
-    document.getElementById('sidebar').classList.add('open');
-    document.getElementById('sidebarOverlay').classList.add('active');
+/* ─── sidebar ─── */
+function openSidebar(){
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('overlay').classList.add('on');
+  document.body.style.overflow='hidden';
+}
+function closeSidebar(){
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('on');
+  document.body.style.overflow='';
+}
+
+/* ─── HST ─── */
+function setHst(state){
+  hstOn = state;
+  document.getElementById('hstToggle').classList.toggle('on', state);
+  document.querySelectorAll('.hst-btn').forEach(b => b.classList.toggle('on', state));
+}
+function toggleHst(){ setHst(!hstOn); }
+
+function getRate(){
+  const v = parseFloat(document.getElementById('hstRate').value);
+  return isNaN(v)||v<0 ? 13 : v;
+}
+function doHst(id){
+  const el = document.getElementById(id);
+  const v = parseFloat(el.value);
+  if(isNaN(v)||v<=0){ showToast('Enter a price first'); return; }
+  el.value = (v*(1+getRate()/100)).toFixed(2);
+  showToast('+'+getRate()+'% HST applied');
+}
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('on');
+  setTimeout(()=>t.classList.remove('on'), 2200);
+}
+
+/* ─── single calc ─── */
+function autoCalc(){
+  const q = parseFloat(document.getElementById('qty').value);
+  const p = parseFloat(document.getElementById('price').value);
+  const box = document.getElementById('rBox0');
+  const val = document.getElementById('rVal0');
+  if(!q||!p||q<=0||p<0||isNaN(q)||isNaN(p)){
+    val.classList.remove('pop'); val.textContent='—'; box.classList.remove('lit'); return;
   }
-  function closeSidebar(){
-    document.getElementById('sidebar').classList.remove('open');
-    document.getElementById('sidebarOverlay').classList.remove('active');
+  val.classList.remove('pop'); void val.offsetWidth;
+  val.textContent = '$'+(p/q).toFixed(2);
+  val.classList.add('pop'); box.classList.add('lit');
+}
+
+/* ─── compare calc ─── */
+function calcCard(qid,pid,vid,bid){
+  const q=parseFloat(document.getElementById(qid).value);
+  const p=parseFloat(document.getElementById(pid).value);
+  const val=document.getElementById(vid);
+  const box=document.getElementById(bid);
+  if(!q||!p||q<=0||p<0||isNaN(q)||isNaN(p)){
+    val.classList.remove('pop'); val.textContent='—'; box.classList.remove('lit'); return NaN;
   }
-
-  /* ── HST ── */
-  function setHstVisible(state){
-    hstVisible = state;
-    document.getElementById('hstToggle').classList.toggle('on', hstVisible);
-    // Apply to all hst buttons
-    document.querySelectorAll('.hst-btn').forEach(btn => {
-      btn.classList.toggle('visible', hstVisible);
-    });
+  const ppu=p/q;
+  val.classList.remove('pop'); void val.offsetWidth;
+  val.textContent='$'+ppu.toFixed(2);
+  val.classList.add('pop'); box.classList.add('lit');
+  return ppu;
+}
+function autoCompare(){
+  const p1=calcCard('qty1','price1','rVal1','rBox1');
+  const p2=calcCard('qty2','price2','rVal2','rBox2');
+  const vd=document.getElementById('verdict');
+  const c1=document.getElementById('card1');
+  const c2=document.getElementById('card2');
+  c1.classList.remove('winner'); c2.classList.remove('winner');
+  if(isNaN(p1)||isNaN(p2)){ vd.className='verdict'; vd.textContent=''; return; }
+  const diff=Math.abs(p1-p2);
+  const pct=((diff/Math.max(p1,p2))*100).toFixed(1);
+  if(diff<0.001){
+    vd.className='verdict tie on'; vd.textContent='Equal price per unit — tied';
+  } else if(p1<p2){
+    c1.classList.add('winner');
+    vd.className='verdict on'; vd.textContent='Product 1 is cheaper · saves '+pct+'%';
+  } else {
+    c2.classList.add('winner');
+    vd.className='verdict on'; vd.textContent='Product 2 is cheaper · saves '+pct+'%';
   }
-  function toggleHstBtn(){ setHstVisible(!hstVisible); }
+}
 
-  function getHstRate(){
-    const v = parseFloat(document.getElementById('hstRate').value);
-    return isNaN(v) || v < 0 ? 13 : v;
+/* ─── mode switch ─── */
+function enterCompare(){
+  document.getElementById('singleCard').style.display='none';
+  document.getElementById('cmpWrap').classList.add('on');
+  document.getElementById('cmpSection').style.display='none';
+  document.getElementById('exitCmpSection').style.display='block';
+  setHst(hstOn);
+  closeSidebar();
+}
+function exitCompare(){
+  document.getElementById('singleCard').style.display='';
+  document.getElementById('cmpWrap').classList.remove('on');
+  document.getElementById('cmpSection').style.display='';
+  document.getElementById('exitCmpSection').style.display='none';
+  closeSidebar();
+}
+
+/* ─── clear ─── */
+function clearAll(){
+  const inCmp = document.getElementById('cmpWrap').classList.contains('on');
+  if(inCmp){
+    ['qty1','price1','qty2','price2'].forEach(id=>document.getElementById(id).value='');
+    ['rVal1','rVal2'].forEach(id=>{const e=document.getElementById(id);e.classList.remove('pop');e.textContent='—';});
+    ['rBox1','rBox2'].forEach(id=>document.getElementById(id).classList.remove('lit'));
+    const v=document.getElementById('verdict'); v.className='verdict'; v.textContent='';
+    document.getElementById('card1').classList.remove('winner');
+    document.getElementById('card2').classList.remove('winner');
+  } else {
+    document.getElementById('qty').value='';
+    document.getElementById('price').value='';
+    const v=document.getElementById('rVal0'); v.classList.remove('pop'); v.textContent='—';
+    document.getElementById('rBox0').classList.remove('lit');
   }
-  function onHstRateChange(){
-    const r = getHstRate();
-    document.querySelectorAll('.hst-btn').forEach(b => b.title = 'Apply ' + r + '% HST');
-  }
+}
 
-  function applyHst(priceId){
-    const priceInput = document.getElementById(priceId);
-    const v = parseFloat(priceInput.value);
-    if(isNaN(v) || v <= 0){ showToast('Enter a price first'); return; }
-    const rate = getHstRate();
-    priceInput.value = (v * (1 + rate / 100)).toFixed(2);
-    showToast('+' + rate + '% HST applied');
-    autoCalc();
-  }
+/* ─── keyboard ─── */
+document.addEventListener('keydown', e=>{
+  if(document.activeElement.tagName==='INPUT') return;
+  if(e.key==='c'||e.key==='C') clearAll();
+  if(e.key==='Escape') closeSidebar();
+});
 
-  function applyHstCompare(n){
-    const priceInput = document.getElementById('price' + n);
-    const v = parseFloat(priceInput.value);
-    if(isNaN(v) || v <= 0){ showToast('Enter a price first'); return; }
-    const rate = getHstRate();
-    priceInput.value = (v * (1 + rate / 100)).toFixed(2);
-    showToast('+' + rate + '% HST applied');
-    autoCompare();
-  }
-
-  function showToast(msg){
-    const t = document.getElementById('hstToast');
-    t.textContent = msg;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2000);
-  }
-
-  /* ── SINGLE MODE AUTO CALC ── */
-  function autoCalc(){
-    const qty = parseFloat(document.getElementById('qty').value);
-    const price = parseFloat(document.getElementById('price').value);
-    const box = document.getElementById('resultBox');
-    const val = document.getElementById('resultVal');
-
-    if(!qty || !price || qty <= 0 || price < 0 || isNaN(qty) || isNaN(price)){
-      val.classList.remove('active');
-      val.textContent = '—';
-      box.classList.remove('has-result');
-      return;
-    }
-    const ppu = price / qty;
-    val.classList.remove('active');
-    void val.offsetWidth;
-    val.textContent = '$' + ppu.toFixed(2);
-    val.classList.add('active');
-    box.classList.add('has-result');
-  }
-
-  /* ── COMPARE AUTO CALC ── */
-  function calcPPU(qtyId, priceId, valId, boxId){
-    const qty = parseFloat(document.getElementById(qtyId).value);
-    const price = parseFloat(document.getElementById(priceId).value);
-    const val = document.getElementById(valId);
-    const box = document.getElementById(boxId);
-    if(!qty || !price || qty <= 0 || price < 0 || isNaN(qty) || isNaN(price)){
-      val.classList.remove('active');
-      val.textContent = '—';
-      box.classList.remove('has-result');
-      return NaN;
-    }
-    const ppu = price / qty;
-    val.classList.remove('active');
-    void val.offsetWidth;
-    val.textContent = '$' + ppu.toFixed(2);
-    val.classList.add('active');
-    box.classList.add('has-result');
-    return ppu;
-  }
-
-  function autoCompare(){
-    const p1 = calcPPU('qty1','price1','resultVal1','resultBox1');
-    const p2 = calcPPU('qty2','price2','resultVal2','resultBox2');
-    const verdict = document.getElementById('compareVerdict');
-    const card1 = document.getElementById('card1');
-    const card2 = document.getElementById('card2');
-
-    card1.classList.remove('winner');
-    card2.classList.remove('winner');
-
-    if(isNaN(p1) || isNaN(p2)){
-      verdict.className = 'compare-verdict';
-      verdict.textContent = '';
-      return;
-    }
-
-    const diff = Math.abs(p1 - p2);
-    const pct = ((diff / Math.max(p1, p2)) * 100).toFixed(1);
-
-    if(Math.abs(p1 - p2) < 0.001){
-      verdict.className = 'compare-verdict tie show';
-      verdict.textContent = 'Equal price per unit — tied';
-    } else if(p1 < p2){
-      card1.classList.add('winner');
-      verdict.className = 'compare-verdict show';
-      verdict.textContent = 'Product 1 is cheaper by ' + pct + '%';
-    } else {
-      card2.classList.add('winner');
-      verdict.className = 'compare-verdict show';
-      verdict.textContent = 'Product 2 is cheaper by ' + pct + '%';
-    }
-  }
-
-  /* ── COMPARE MODE TOGGLE ── */
-  function enterCompare(){
-    compareMode = true;
-    document.getElementById('singleCard').style.display = 'none';
-    document.getElementById('compareWrapper').classList.add('active');
-    document.getElementById('compareSection').style.display = 'none';
-    document.getElementById('exitCompareSection').style.display = 'block';
-    closeSidebar();
-    // Sync HST buttons visibility
-    setHstVisible(hstVisible);
-  }
-
-  function exitCompare(){
-    compareMode = false;
-    document.getElementById('singleCard').style.display = 'block';
-    document.getElementById('compareWrapper').classList.remove('active');
-    document.getElementById('compareSection').style.display = 'block';
-    document.getElementById('exitCompareSection').style.display = 'none';
-    closeSidebar();
-  }
-
-  /* ── CLEAR ── */
-  function clearAll(){
-    if(compareMode){
-      ['qty1','price1','qty2','price2'].forEach(id => document.getElementById(id).value = '');
-      ['resultVal1','resultVal2'].forEach(id => {
-        const el = document.getElementById(id);
-        el.classList.remove('active');
-        el.textContent = '—';
-      });
-      ['resultBox1','resultBox2'].forEach(id => document.getElementById(id).classList.remove('has-result'));
-      const v = document.getElementById('compareVerdict');
-      v.className = 'compare-verdict';
-      v.textContent = '';
-      document.getElementById('card1').classList.remove('winner');
-      document.getElementById('card2').classList.remove('winner');
-    } else {
-      document.getElementById('qty').value = '';
-      document.getElementById('price').value = '';
-      const val = document.getElementById('resultVal');
-      val.classList.remove('active');
-      val.textContent = '—';
-      document.getElementById('resultBox').classList.remove('has-result');
-    }
-  }
-
-  /* ── KEYBOARD ── */
-  document.addEventListener('keydown', e => {
-    if(document.activeElement.tagName === 'INPUT') return;
-    if(e.key === 'c' || e.key === 'C') clearAll();
-    if(e.key === 'Escape') closeSidebar();
-  });
-
-  /* ── INIT ── */
-  setHstVisible(true);
+/* ─── init ─── */
+setHst(true);
 </script>
 </body>
 </html>
